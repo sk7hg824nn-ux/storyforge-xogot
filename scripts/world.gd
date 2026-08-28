@@ -1,5 +1,5 @@
 extends Node3D
-# xogot46-v5 full wire
+# Photo cards stand in 3D. Collision stays a hidden capsule. Mesh bodies need GLB later.
 
 var host = "https://storyforge-backend-5aj0.onrender.com"
 var dusk = false
@@ -7,6 +7,7 @@ var yaw = 0.0
 var pack = {}
 var places
 var folk
+var Teachers = load("res://scripts/teachers.gd")
 
 func api():
 	if dusk:
@@ -21,6 +22,9 @@ func _ready():
 	folk = Node3D.new()
 	folk.name = "Folk"
 	add_child(folk)
+	var pmesh = $Player.get_node_or_null("Mesh")
+	if pmesh:
+		pmesh.visible = false
 	$HTTPRequest.request_completed.connect(_on_http)
 	$HTTPRequest.request(api() + "/scene")
 
@@ -67,23 +71,47 @@ func _folk():
 			continue
 		if str(ch.get("id", "")) == "player":
 			continue
-		var cap = MeshInstance3D.new()
-		var mesh = CapsuleMesh.new()
-		mesh.radius = 0.22
-		mesh.height = 1.5
-		cap.mesh = mesh
-		var m = StandardMaterial3D.new()
-		if str(ch.get("gender", "")) == "female":
-			m.albedo_color = Color(0.82, 0.55, 0.62)
-		else:
-			m.albedo_color = Color(0.45, 0.52, 0.62)
-		cap.material_override = m
+		var name = str(ch.get("name", ch.get("id", "folk")))
+		var card = Node3D.new()
 		var a = float(n) * 1.15
-		cap.position = Vector3(sin(a) * 2.6, 0.85, 1.8 + cos(a) * 2.1)
-		folk.add_child(cap)
+		card.position = Vector3(sin(a) * 2.6, 0.0, 1.8 + cos(a) * 2.1)
+		var face = Sprite3D.new()
+		face.name = "Face"
+		face.pixel_size = 0.0032
+		face.billboard = 1
+		face.position = Vector3(0, 1.15, 0)
+		card.add_child(face)
+		var tag = Label3D.new()
+		tag.text = name
+		tag.font_size = 28
+		tag.position = Vector3(0, 2.05, 0)
+		tag.billboard = 1
+		tag.modulate = Color(0.95, 0.82, 0.55, 1)
+		card.add_child(tag)
+		var req = HTTPRequest.new()
+		req.name = "Pull"
+		card.add_child(req)
+		req.request_completed.connect(_on_face.bind(face))
+		var url = Teachers.url_for_name(name)
+		req.request(url)
+		folk.add_child(card)
 		n += 1
 		if n > 8:
 			break
+
+func _on_face(_result, code, _headers, body, face):
+	if int(code) != 200:
+		return
+	if face == null:
+		return
+	var img = Image.new()
+	var err = img.load_jpg_from_buffer(body)
+	if err != OK:
+		err = img.load_png_from_buffer(body)
+	if err != OK:
+		return
+	var tex = ImageTexture.create_from_image(img)
+	face.texture = tex
 
 func _physics_process(delta):
 	var wish = Vector2.ZERO
