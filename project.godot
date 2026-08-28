@@ -3,8 +3,8 @@ config_version=5
 
 [application]
 config/name="Story Forge"
-config/description="Living world client"
-run/main_scene="res://scenes/main.tscn"
+config/description="2D living world - Cult of the Lamb read, anime dusk panels"
+run/main_scene="res://scenes/main2d.tscn"
 config/features=PackedStringArray("4.6", "Mobile")
 
 [display]
@@ -19,3 +19,4 @@ pointing/emulate_touch_from_mouse=true
 
 [rendering]
 renderer/rendering_method="mobile"
+textures/canvas_textures/default_texture_filter=2
