@@ -1,12 +1,17 @@
 extends Node3D
-# xogot46-v4 biomes + act
+# xogot46-v5 full wire
 
-const API = "https://storyforge-backend-5aj0.onrender.com/api/sim"
-
+var host = "https://storyforge-backend-5aj0.onrender.com"
+var dusk = false
 var yaw = 0.0
 var pack = {}
 var places
 var folk
+
+func api():
+	if dusk:
+		return host + "/api/sim/after-dark"
+	return host + "/api/sim"
 
 func _ready():
 	places = Node3D.new()
@@ -17,7 +22,7 @@ func _ready():
 	folk.name = "Folk"
 	add_child(folk)
 	$HTTPRequest.request_completed.connect(_on_http)
-	$HTTPRequest.request(API + "/scene")
+	$HTTPRequest.request(api() + "/scene")
 
 func _on_http(_result, code, _headers, body):
 	if int(code) != 200:
@@ -34,6 +39,8 @@ func _paint():
 	var loc = pack.get("location", {})
 	if typeof(loc) == TYPE_DICTIONARY and str(loc.get("name", "")) != "":
 		title = str(loc.get("name"))
+	if dusk:
+		title = title + "  18+"
 	$HUD/Place.text = title
 	var t = pack.get("time", {})
 	if typeof(t) == TYPE_DICTIONARY:
@@ -66,14 +73,13 @@ func _folk():
 		mesh.height = 1.5
 		cap.mesh = mesh
 		var m = StandardMaterial3D.new()
-		var g = str(ch.get("gender", ""))
-		if g == "female":
+		if str(ch.get("gender", "")) == "female":
 			m.albedo_color = Color(0.82, 0.55, 0.62)
 		else:
 			m.albedo_color = Color(0.45, 0.52, 0.62)
 		cap.material_override = m
-		var a = float(n) * 1.1
-		cap.position = Vector3(sin(a) * 2.4, 0.85, 1.6 + cos(a) * 2.0)
+		var a = float(n) * 1.15
+		cap.position = Vector3(sin(a) * 2.6, 0.85, 1.8 + cos(a) * 2.1)
 		folk.add_child(cap)
 		n += 1
 		if n > 8:
@@ -105,10 +111,14 @@ func _unhandled_input(event):
 	if event is InputEventScreenDrag:
 		yaw -= event.relative.x * 0.008
 
+func _headers():
+	return PackedStringArray(["Content-Type: application/json"])
+
 func _go(where):
-	var payload = JSON.stringify({"action": "go:" + where})
-	var headers = PackedStringArray(["Content-Type: application/json"])
-	$HTTPRequest.request(API + "/act", headers, 2, payload)
+	$HTTPRequest.request(api() + "/act", _headers(), 2, JSON.stringify({"action": "go:" + where}))
+
+func _say(text):
+	$HTTPRequest.request(api() + "/say", _headers(), 2, JSON.stringify({"text": text}))
 
 func go_forest():
 	_go("forest")
@@ -121,3 +131,13 @@ func go_town():
 
 func go_beach():
 	_go("beach")
+
+func go_dusk():
+	dusk = not dusk
+	$HTTPRequest.request(api() + "/scene")
+
+func go_talk():
+	_say("hello")
+
+func go_yes():
+	_say("yes")
