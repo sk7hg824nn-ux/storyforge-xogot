@@ -1,12 +1,21 @@
 extends Node3D
-# xogot46-v3 5aj0
+# xogot46-v4 biomes + act
 
 const API = "https://storyforge-backend-5aj0.onrender.com/api/sim"
 
 var yaw = 0.0
 var pack = {}
+var places
+var folk
 
 func _ready():
+	places = Node3D.new()
+	places.name = "Places"
+	places.set_script(load("res://scripts/places.gd"))
+	add_child(places)
+	folk = Node3D.new()
+	folk.name = "Folk"
+	add_child(folk)
 	$HTTPRequest.request_completed.connect(_on_http)
 	$HTTPRequest.request(API + "/scene")
 
@@ -16,7 +25,6 @@ func _on_http(_result, code, _headers, body):
 		return
 	var parsed = JSON.parse_string(body.get_string_from_utf8())
 	if typeof(parsed) != TYPE_DICTIONARY:
-		$HUD/Line.text = "Walk. The hour is live."
 		return
 	pack = parsed
 	_paint()
@@ -27,17 +35,49 @@ func _paint():
 	if typeof(loc) == TYPE_DICTIONARY and str(loc.get("name", "")) != "":
 		title = str(loc.get("name"))
 	$HUD/Place.text = title
-	var line = str(pack.get("speech", ""))
-	if line == "" or line == "<null>":
-		line = str(pack.get("action", "Walk. The hour is live."))
-	if line == "" or line == "<null>":
-		line = "Walk. The hour is live."
-	$HUD/Line.text = line
 	var t = pack.get("time", {})
 	if typeof(t) == TYPE_DICTIONARY:
 		$HUD/Clock.text = str(t.get("season", "")) + " " + str(t.get("hour", ""))
-	else:
-		$HUD/Clock.text = "live"
+	var line = str(pack.get("speech", ""))
+	if line == "" or line == "<null>":
+		line = str(pack.get("action", ""))
+	if line == "" or line == "<null>":
+		line = "Walk. The hour is live."
+	$HUD/Line.text = line
+	if places and places.has_method("rebuild"):
+		places.rebuild(pack)
+	_folk()
+
+func _folk():
+	for c in folk.get_children():
+		c.queue_free()
+	var list = pack.get("characters", [])
+	if typeof(list) != TYPE_ARRAY:
+		return
+	var n = 0
+	for ch in list:
+		if typeof(ch) != TYPE_DICTIONARY:
+			continue
+		if str(ch.get("id", "")) == "player":
+			continue
+		var cap = MeshInstance3D.new()
+		var mesh = CapsuleMesh.new()
+		mesh.radius = 0.22
+		mesh.height = 1.5
+		cap.mesh = mesh
+		var m = StandardMaterial3D.new()
+		var g = str(ch.get("gender", ""))
+		if g == "female":
+			m.albedo_color = Color(0.82, 0.55, 0.62)
+		else:
+			m.albedo_color = Color(0.45, 0.52, 0.62)
+		cap.material_override = m
+		var a = float(n) * 1.1
+		cap.position = Vector3(sin(a) * 2.4, 0.85, 1.6 + cos(a) * 2.0)
+		folk.add_child(cap)
+		n += 1
+		if n > 8:
+			break
 
 func _physics_process(delta):
 	var wish = Vector2.ZERO
@@ -65,14 +105,19 @@ func _unhandled_input(event):
 	if event is InputEventScreenDrag:
 		yaw -= event.relative.x * 0.008
 
+func _go(where):
+	var payload = JSON.stringify({"action": "go:" + where})
+	var headers = PackedStringArray(["Content-Type: application/json"])
+	$HTTPRequest.request(API + "/act", headers, 2, payload)
+
 func go_forest():
-	$HTTPRequest.request(API + "/scene")
+	_go("forest")
 
 func go_farm():
-	$HTTPRequest.request(API + "/scene")
+	_go("farm")
 
 func go_town():
-	$HTTPRequest.request(API + "/scene")
+	_go("town")
 
 func go_beach():
-	$HTTPRequest.request(API + "/scene")
+	_go("beach")
