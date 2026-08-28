@@ -1,4 +1,5 @@
 extends Node3D
+# xogot46-v2
 
 const API = "https://storyforge-backend-5faj0.onrender.com/api/sim"
 
@@ -10,52 +11,37 @@ func _ready():
 	$HTTPRequest.request(API + "/scene")
 
 func _on_http(_result, code, _headers, body):
-	if code != 200:
-		$HUD/Line.text = "Server " + str(code) + " — walk anyway."
+	if int(code) != 200:
+		$HUD/Line.text = "Server " + str(code) + " - walk anyway."
 		return
-	var text = body.get_string_from_utf8()
-	var parsed = JSON.parse_string(text)
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
 	if typeof(parsed) != TYPE_DICTIONARY:
+		$HUD/Line.text = "Walk. The hour is live."
 		return
 	pack = parsed
 	_paint()
 
 func _paint():
-	var loc = pack.get("location", {})
-	var t = pack.get("time", {})
-	var scenery = pack.get("scenery", {})
 	var title = "Story Forge"
-	if typeof(loc) == TYPE_DICTIONARY and loc.has("name"):
-		title = str(loc["name"])
-	elif typeof(scenery) == TYPE_DICTIONARY and scenery.has("id"):
-		title = str(scenery["id"])
+	var loc = pack.get("location", {})
+	if typeof(loc) == TYPE_DICTIONARY and loc.get("name", "") != "":
+		title = str(loc.get("name"))
 	$HUD/Place.text = title
-	var season = ""
-	var month = ""
-	var day = ""
-	var hour = 0
-	var minute = 0
-	if typeof(t) == TYPE_DICTIONARY:
-		season = str(t.get("season", ""))
-		month = str(t.get("month", ""))
-		day = str(t.get("day", ""))
-		hour = int(t.get("hour", 0))
-		minute = int(t.get("minute", 0))
-	$HUD/Clock.text = season + " " + month + "/" + day + "  " + str(hour) + ":" + str(minute)
-	var line = str(pack.get("speech", pack.get("action", "")))
+	$HUD/Clock.text = "Story Forge 4.6"
+	var line = str(pack.get("speech", ""))
 	if line == "" or line == "<null>":
 		line = "Walk. The hour is live."
 	$HUD/Line.text = line
 
 func _physics_process(delta):
 	var wish = Vector2.ZERO
-	if Input.is_action_pressed("ui_up") or Input.is_key_pressed(KEY_W):
+	if Input.is_action_pressed("ui_up"):
 		wish.y += 1.0
-	if Input.is_action_pressed("ui_down") or Input.is_key_pressed(KEY_S):
+	if Input.is_action_pressed("ui_down"):
 		wish.y -= 1.0
-	if Input.is_action_pressed("ui_left") or Input.is_key_pressed(KEY_A):
+	if Input.is_action_pressed("ui_left"):
 		wish.x -= 1.0
-	if Input.is_action_pressed("ui_right") or Input.is_key_pressed(KEY_D):
+	if Input.is_action_pressed("ui_right"):
 		wish.x += 1.0
 	if wish.length() > 1.0:
 		wish = wish.normalized()
@@ -73,19 +59,14 @@ func _unhandled_input(event):
 	if event is InputEventScreenDrag:
 		yaw -= event.relative.x * 0.008
 
-func _go(where):
-	var body = JSON.stringify({"action": "go:" + where})
-	var headers = PackedStringArray(["Content-Type: application/json"])
-	$HTTPRequest.request(API + "/act", headers, 2, body)
-
 func go_forest():
-	_go("forest")
+	$HTTPRequest.request(API + "/scene")
 
 func go_farm():
-	_go("farm")
+	$HTTPRequest.request(API + "/scene")
 
 func go_town():
-	_go("town")
+	$HTTPRequest.request(API + "/scene")
 
 func go_beach():
-	_go("beach")
+	$HTTPRequest.request(API + "/scene")
