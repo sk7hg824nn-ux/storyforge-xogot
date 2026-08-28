@@ -1,7 +1,7 @@
 extends Node3D
-# xogot46-v2
+# xogot46-v3 5aj0
 
-const API = "https://storyforge-backend-5faj0.onrender.com/api/sim"
+const API = "https://storyforge-backend-5aj0.onrender.com/api/sim"
 
 var yaw = 0.0
 var pack = {}
@@ -24,14 +24,20 @@ func _on_http(_result, code, _headers, body):
 func _paint():
 	var title = "Story Forge"
 	var loc = pack.get("location", {})
-	if typeof(loc) == TYPE_DICTIONARY and loc.get("name", "") != "":
+	if typeof(loc) == TYPE_DICTIONARY and str(loc.get("name", "")) != "":
 		title = str(loc.get("name"))
 	$HUD/Place.text = title
-	$HUD/Clock.text = "Story Forge 4.6"
 	var line = str(pack.get("speech", ""))
+	if line == "" or line == "<null>":
+		line = str(pack.get("action", "Walk. The hour is live."))
 	if line == "" or line == "<null>":
 		line = "Walk. The hour is live."
 	$HUD/Line.text = line
+	var t = pack.get("time", {})
+	if typeof(t) == TYPE_DICTIONARY:
+		$HUD/Clock.text = str(t.get("season", "")) + " " + str(t.get("hour", ""))
+	else:
+		$HUD/Clock.text = "live"
 
 func _physics_process(delta):
 	var wish = Vector2.ZERO
