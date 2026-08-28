@@ -1,5 +1,5 @@
 extends Node3D
-# Photo cards stand in 3D. Collision stays a hidden capsule. Mesh bodies need GLB later.
+# Bodies are built from parts + teacher photo. GLB swap comes when Meshy files exist.
 
 var host = "https://storyforge-backend-5aj0.onrender.com"
 var dusk = false
@@ -8,6 +8,7 @@ var pack = {}
 var places
 var folk
 var Teachers = load("res://scripts/teachers.gd")
+var Body = load("res://scripts/body.gd")
 
 func api():
 	if dusk:
@@ -72,37 +73,21 @@ func _folk():
 		if str(ch.get("id", "")) == "player":
 			continue
 		var name = str(ch.get("name", ch.get("id", "folk")))
-		var card = Node3D.new()
-		var a = float(n) * 1.15
-		card.position = Vector3(sin(a) * 2.6, 0.0, 1.8 + cos(a) * 2.1)
-		var face = Sprite3D.new()
-		face.name = "Face"
-		face.pixel_size = 0.0032
-		face.billboard = 1
-		face.position = Vector3(0, 1.15, 0)
-		card.add_child(face)
-		var tag = Label3D.new()
-		tag.text = name
-		tag.font_size = 28
-		tag.position = Vector3(0, 2.05, 0)
-		tag.billboard = 1
-		tag.modulate = Color(0.95, 0.82, 0.55, 1)
-		card.add_child(tag)
+		var card = Body.make(ch)
+		var a = float(n) * 1.2
+		card.position = Vector3(sin(a) * 2.8, 0.0, 1.6 + cos(a) * 2.2)
 		var req = HTTPRequest.new()
 		req.name = "Pull"
 		card.add_child(req)
-		req.request_completed.connect(_on_face.bind(face))
-		var url = Teachers.url_for_name(name)
-		req.request(url)
+		req.request_completed.connect(_on_skin.bind(card))
+		req.request(Teachers.url_for_name(name))
 		folk.add_child(card)
 		n += 1
 		if n > 8:
 			break
 
-func _on_face(_result, code, _headers, body, face):
+func _on_skin(_result, code, _headers, body, card):
 	if int(code) != 200:
-		return
-	if face == null:
 		return
 	var img = Image.new()
 	var err = img.load_jpg_from_buffer(body)
@@ -111,7 +96,7 @@ func _on_face(_result, code, _headers, body, face):
 	if err != OK:
 		return
 	var tex = ImageTexture.create_from_image(img)
-	face.texture = tex
+	Body.paint(card, tex)
 
 func _physics_process(delta):
 	var wish = Vector2.ZERO
