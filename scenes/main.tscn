@@ -25,6 +25,10 @@ light_color = Color(1, 0.92, 0.75, 1)
 light_energy = 1.15
 shadow_enabled = true
 
+[node name="Fill" type="HemisphereLight3D" parent="."]
+light_color = Color(0.55, 0.7, 0.85, 1)
+light_energy = 0.45
+
 [node name="Ground" type="StaticBody3D" parent="."]
 
 [node name="Mesh" type="MeshInstance3D" parent="Ground"]
@@ -45,6 +49,7 @@ shape = SubResource("CapsuleShape_player")
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 9)
 fov = 52.0
+far = 220.0
 
 [node name="HTTPRequest" type="HTTPRequest" parent="."]
 
@@ -70,17 +75,17 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 12.0
-offset_top = -140.0
+offset_top = -160.0
 offset_right = -12.0
-offset_bottom = -72.0
+offset_bottom = -88.0
 autowrap_mode = 3
 text = "Connecting…"
 
 [node name="Buttons" type="HBoxContainer" parent="HUD"]
 offset_left = 8.0
-offset_top = 68.0
+offset_top = 64.0
 offset_right = 380.0
-offset_bottom = 108.0
+offset_bottom = 104.0
 theme_override_constants/separation = 6
 
 [node name="Forest" type="Button" parent="HUD/Buttons"]
@@ -95,7 +100,26 @@ text = "town"
 [node name="Beach" type="Button" parent="HUD/Buttons"]
 text = "beach"
 
+[node name="More" type="HBoxContainer" parent="HUD"]
+offset_left = 8.0
+offset_top = 108.0
+offset_right = 380.0
+offset_bottom = 148.0
+theme_override_constants/separation = 6
+
+[node name="Dusk" type="Button" parent="HUD/More"]
+text = "18+"
+
+[node name="Talk" type="Button" parent="HUD/More"]
+text = "talk"
+
+[node name="Yes" type="Button" parent="HUD/More"]
+text = "yes"
+
 [connection signal="pressed" from="HUD/Buttons/Forest" to="." method="go_forest"]
 [connection signal="pressed" from="HUD/Buttons/Farm" to="." method="go_farm"]
 [connection signal="pressed" from="HUD/Buttons/Town" to="." method="go_town"]
 [connection signal="pressed" from="HUD/Buttons/Beach" to="." method="go_beach"]
+[connection signal="pressed" from="HUD/More/Dusk" to="." method="go_dusk"]
+[connection signal="pressed" from="HUD/More/Talk" to="." method="go_talk"]
+[connection signal="pressed" from="HUD/More/Yes" to="." method="go_yes"]
